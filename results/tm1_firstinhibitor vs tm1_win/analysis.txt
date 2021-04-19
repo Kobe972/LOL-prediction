@@ -1,5 +1,5 @@
 team1_win                  0      1    sum
 team1_firstInhibitor    2849  27336  30185
 !team1_firstInhibitor  38626  11189  49815
-weighted entropy= 1.406669639497876
+weighted entropy= 0.6486788709672755
 weighted accuracy= 0.824525

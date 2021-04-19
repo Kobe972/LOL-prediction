@@ -13,7 +13,7 @@ def win_to_team_data(data_name):
     p1=float(result[0][data_name])/result['sum'][data_name]
     p2=float(result[0]['!'+data_name])/result['sum']['!'+data_name]
     entropy1=-p1*math.log2(p1)-(1-p1)*math.log2(1-p1)
-    entropy2=-p1*math.log2(p2)-(1-p1)*math.log2(1-p2)
+    entropy2=-p2*math.log2(p2)-(1-p2)*math.log2(1-p2)
     print('weighted entropy=',entropy1*result['sum'][data_name]/result['sum'].sum()+entropy2*result['sum']['!'+data_name]/result['sum'].sum())
     print('weighted accuracy=',(1-p1)*result['sum'][data_name]/result['sum'].sum()+p2*result['sum']['!'+data_name]/result['sum'].sum())
     result2=result.drop(columns=['sum'])

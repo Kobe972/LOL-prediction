@@ -1,5 +1,5 @@
 team1_win              0      1    sum
 team1_firstTower   11829  27661  39490
 !team1_firstTower  29646  10864  40510
-weighted entropy= 1.1765396661204868
+weighted entropy= 0.8595204061747612
 weighted accuracy= 0.7163375000000001
