@@ -1,0 +1,5 @@
+team1_win                   0      1    sum
+team1_firstRiftHerald   14747  22065  36812
+!team1_firstRiftHerald  26728  16460  43188
+weighted entropy= 1.046982279815795
+weighted accuracy= 0.6099125000000001

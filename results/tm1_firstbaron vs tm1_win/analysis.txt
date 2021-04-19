@@ -1,0 +1,5 @@
+team1_win              0      1    sum
+team1_firstBaron    3978  18381  22359
+!team1_firstBaron  37497  20144  57641
+weighted entropy= 1.1667134368320058
+weighted accuracy= 0.698475

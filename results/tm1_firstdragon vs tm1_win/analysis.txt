@@ -1,0 +1,5 @@
+team1_win               0      1    sum
+team1_firstDragon   14451  23259  37710
+!team1_firstDragon  27024  15266  42290
+weighted entropy= 1.0628213304575338
+weighted accuracy= 0.6285375

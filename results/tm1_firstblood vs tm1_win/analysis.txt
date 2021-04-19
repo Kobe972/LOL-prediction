@@ -1,0 +1,5 @@
+team1_win              0      1    sum
+team1_firstBlood   17210  23363  40573
+!team1_firstBlood  24265  15162  39427
+weighted entropy= 1.0363808360206956
+weighted accuracy= 0.5953499999999999
