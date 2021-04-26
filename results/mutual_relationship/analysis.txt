@@ -1,0 +1,89 @@
+team1_firstTower    True  False    sum
+team1_firstBlood   24281  16292  40573
+!team1_firstBlood  15209  24218  39427
+weighted entropy= 0.9669962447627047
+weighted accuracy= 0.6062375
+
+team1_firstInhibitor  False   True    sum
+team1_firstBlood      22568  18005  40573
+!team1_firstBlood     27247  12180  39427
+weighted entropy= 0.9421015876006011
+weighted accuracy= 0.56565
+
+team1_firstBaron   False   True    sum
+team1_firstBlood   27849  12724  40573
+!team1_firstBlood  29792   9635  39427
+weighted entropy= 0.8504485432418589
+weighted accuracy= 0.53145
+
+team1_firstDragon   True  False    sum
+team1_firstBlood   21893  18680  40573
+!team1_firstBlood  15817  23610  39427
+weighted entropy= 0.9837225020176562
+weighted accuracy= 0.5687875
+
+team1_firstRiftHerald   True  False    sum
+team1_firstBlood       21196  19377  40573
+!team1_firstBlood      15616  23811  39427
+weighted entropy= 0.9837930240057176
+weighted accuracy= 0.5625875
+
+team1_firstInhibitor   True  False    sum
+team1_firstTower      21847  17643  39490
+!team1_firstTower      8338  32172  40510
+weighted entropy= 0.8609712980905322
+weighted accuracy= 0.6752374999999999
+
+team1_firstBaron   False   True    sum
+team1_firstTower   25395  14095  39490
+!team1_firstTower  32246   8264  40510
+weighted entropy= 0.8336377368567279
+weighted accuracy= 0.5792625
+
+team1_firstDragon   True  False    sum
+team1_firstTower   22718  16772  39490
+!team1_firstTower  14992  25518  40510
+weighted entropy= 0.9669497898200576
+weighted accuracy= 0.60295
+
+team1_firstRiftHerald   True  False    sum
+team1_firstTower       26567  12923  39490
+!team1_firstTower      10245  30265  40510
+weighted entropy= 0.8633526094503122
+weighted accuracy= 0.7103999999999999
+
+team1_firstBaron        True  False    sum
+team1_firstInhibitor   16968  13217  30185
+!team1_firstInhibitor   5391  44424  49815
+weighted entropy= 0.6810330129849608
+weighted accuracy= 0.7674000000000001
+
+team1_firstDragon       True  False    sum
+team1_firstInhibitor   17821  12364  30185
+!team1_firstInhibitor  19889  29926  49815
+weighted entropy= 0.9726951010068261
+weighted accuracy= 0.5968374999999999
+
+team1_firstRiftHerald   True  False    sum
+team1_firstInhibitor   17941  12244  30185
+!team1_firstInhibitor  18871  30944  49815
+weighted entropy= 0.963598844718669
+weighted accuracy= 0.6110625
+
+team1_firstDragon   True  False    sum
+team1_firstBaron   12602   9757  22359
+!team1_firstBaron  25108  32533  57641
+weighted entropy= 0.9880788565568621
+weighted accuracy= 0.5641875
+
+team1_firstRiftHerald   True  False    sum
+team1_firstBaron       12462   9897  22359
+!team1_firstBaron      24350  33291  57641
+weighted entropy= 0.9847849378888032
+weighted accuracy= 0.5719125
+
+team1_firstRiftHerald   True  False    sum
+team1_firstDragon      19790  17920  37710
+!team1_firstDragon     17022  25268  42290
+weighted entropy= 0.9845723708779304
+weighted accuracy= 0.5632250000000001

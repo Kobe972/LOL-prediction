@@ -1,0 +1,10 @@
+max_accuracy= 0.73835
+corresponding classifier i= 22
+
+player_deaths>= 22 对应的玩家胜负情况统计
+team1_loss    34561
+team1_win     14018
+
+player_deaths< 22 对应的玩家胜负情况统计
+team1_win     24507
+team1_loss     6914

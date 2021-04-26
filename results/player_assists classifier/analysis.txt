@@ -1,0 +1,10 @@
+max_accuracy= 0.69495
+corresponding classifier i= 36
+
+player_assists>= 36 对应的玩家胜负情况统计
+team1_win     26425
+team1_loss    12304
+
+player_assists< 36 对应的玩家胜负情况统计
+team1_loss    29171
+team1_win     12100
