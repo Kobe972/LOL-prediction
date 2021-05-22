@@ -2,7 +2,7 @@ import numpy as np
 from pandas import Series,DataFrame
 import pickle
 import math
-MAX_DEPTH=10
+MAX_DEPTH=20
 class ClsProperty: #用于给节点分类的分类器
     """
     self.name:类型名，用于索引
@@ -40,7 +40,7 @@ class Node:
     self.clsproperties:分类依据
     self.ancestor:公共祖先
     """
-    def __init__(self,classes,data,depth,ancestor=None,clsproperties=None): #classes表示会分成哪几类，data表示该节点包含的数据
+    def __init__(self,classes,data,depth,clsproperties=None): #classes表示会分成哪几类，data表示该节点包含的数据
         self.classes=classes
         self.num_cls=len(classes)
         self.data=data
@@ -51,10 +51,6 @@ class Node:
         if clsproperties==None:
             self.clsproperties=[]
             self.gen_clsproperties()
-        if ancestor==None:
-            self.ancestor=self
-        else:
-            self.ancestor=ancestor
 
     def gen_clsproperties(self): #生成分类属性
         index=0
@@ -236,14 +232,14 @@ class Node:
                     properties[key]=self.data.properties[key][mask]
                 new_data=Data(self.data.type,properties) #子节点包含的数据
                 if(new_data.count==0): #子节点已经不包含任何数据，将其设为叶节点，类型为父节点所带数据中占比最大的类一类
-                    _child=Node(self.classes,new_data,self.depth+1,self.ancestor)
+                    _child=Node(self.classes,new_data,self.depth+1)
                     _child.leaf=1
                     self.child.append(_child)
                     self.child[-1].result=self.most_class()
                 else:
                     _clsproperties=self.clsproperties.copy()
                     _clsproperties.remove(self.classifier) #删去该节点的分类器，作为子节点的分类标准集合
-                    self.child.append(Node(self.classes,new_data,self.depth+1,self.ancestor,_clsproperties))
+                    self.child.append(Node(self.classes,new_data,self.depth+1,_clsproperties))
         else: #分类器为连续型
             mask=(self.data.properties[self.classifier.name]>=self.classifier.thresh)
             properties={}
@@ -251,7 +247,7 @@ class Node:
                 properties[key]=self.data.properties[key][mask]
             new_data=Data(self.data.type,properties)
             if(new_data.count==0):
-                _child=Node(self.classes,new_data,self.depth+1,self.ancestor)
+                _child=Node(self.classes,new_data,self.depth+1)
                 _child.leaf=1
                 self.child.append(_child)
                 self.child[-1].result=self.most_class()
@@ -262,23 +258,23 @@ class Node:
                     properties[key]=self.data.properties[key][mask]
                 new_data=Data(self.data.type,properties)
                 if(new_data.count==0):
-                    _child=Node(self.classes,new_data,self.depth+1,self.ancestor)
+                    _child=Node(self.classes,new_data,self.depth+1)
                     _child.leaf=1
                     self.child.append(_child)
                     self.child[-1].result=self.most_class()
                 else:
-                    self.child.append(Node(self.classes,new_data,self.depth+1,self.ancestor,self.clsproperties.copy()))
+                    self.child.append(Node(self.classes,new_data,self.depth+1,self.clsproperties.copy()))
                 properties={}
                 for key in self.data.properties.keys():
                     properties[key]=self.data.properties[key][~mask]
                 new_data=Data(self.data.type,properties)
                 if(new_data.count==0):
-                    _child=Node(self.classes,new_data,self.depth+1,self.ancestor)
+                    _child=Node(self.classes,new_data,self.depth+1)
                     _child.leaf=1
                     self.child.append(_child)
                     self.child[-1].result=self.most_class()
                 else:
-                    self.child.append(Node(self.classes,new_data,self.depth+1,self.ancestor,self.clsproperties.copy()))
+                    self.child.append(Node(self.classes,new_data,self.depth+1,self.clsproperties.copy()))
         for _child in self.child:
             _child.train()
         return
@@ -291,8 +287,10 @@ class DTree:
         self.classes=classes
         self.ancestor=Node(classes,train_data,0)
         self.ancestor.test_data=test_data
-    def train(self):
+    def train(self,prune=True):
         self.ancestor.train()
+        if prune:
+            self.prune(self.ancestor)
     def compute_accuracy(self):
         return self.ancestor.compute_accuracy(self.test_data)
     def predict(self,prop):
@@ -306,3 +304,16 @@ class DTree:
             _prop[key]=prop[index]
             index+=1
         return self.ancestor.predict(_prop)
+    def prune(self,node): #剪枝
+        if node.leaf==1:
+            return
+        for child in node.child:
+            self.prune(child)
+        origin_accuracy=self.compute_accuracy()
+        node.leaf=1
+        node.result=node.most_class()
+        new_accuracy=self.compute_accuracy()
+        if new_accuracy>=origin_accuracy: #如果去掉子节点后泛化性能加强，则去掉子节点
+            node.child=[]
+            return
+        node.leaf=0
