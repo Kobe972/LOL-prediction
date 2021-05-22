@@ -7,4 +7,4 @@ analysisN.py:They are independent.Each file analyses the data from a unique pers
 Below is the second task--write a program to predict the result.
 decision_tree.py:Written module for decision tree
 file_utils:used to load csv files and return data structure corresponding to decision_tree.py  
-predict.py:Verify the accuracy of the module.If not pruned,the accuracy will be 94.725% according to the division of 4:1(train_data:test_data).
+predict.py:Verify the accuracy of the module.If not pruned,the accuracy will be 94.725% according to the division of 4:1(train_data:test_data).If pruned,95.7775%.
