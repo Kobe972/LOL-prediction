@@ -3,7 +3,7 @@ from pandas import Series,DataFrame
 import pickle
 import math
 MAX_DEPTH=10
-class ClsProperty:
+class ClsProperty: #用于给节点分类的分类器
     """
     self.name:类型名，用于索引
     self.type:分类属性类型，0表示离散，1表示连
@@ -14,13 +14,18 @@ class ClsProperty:
         self.name=name
         self.type=ctype #类型为int32
         self.values=values
+    def copy(self):
+        ret=ClsProperty(self.name,self.type,self.values)
+        if self.type==1:
+            ret.thresh=self.thresh
+        return ret
 
         
 class Data:
     def __init__(self,ctype,properties={}):
         self.properties=properties
         self.type=ctype #类型为ndarray
-        self.count=len(properties['class']) #共有多少组数据
+        self.count=len(self.properties[sorted(properties.keys())[0]]) #共有多少组数据
         assert len(self.type)==len(properties.keys())-1
         
     def add_property(self,info):
@@ -50,7 +55,8 @@ class Node:
             self.ancestor=self
         else:
             self.ancestor=ancestor
-    def gen_clsproperties(self):
+
+    def gen_clsproperties(self): #生成分类属性
         index=0
         for key,value in self.data.properties.items():
             if key=='class':
@@ -58,16 +64,19 @@ class Node:
             if self.data.type[index]==0:
                 self.clsproperties.append(ClsProperty(key,0,np.unique(value)))
             else:
-                self.clsproperties.append(ClsProperty(key,0))
+                self.clsproperties.append(ClsProperty(key,1))
             index=index+1
             
     def entropy(self,data):#计算熵
         p=np.zeros(self.num_cls)
         for i in range(self.num_cls):
-            p[i]=np.sum(data.properties['class']==self.classes[i])/data.count
-            if(p[i]!=0):
-                p[i]=p[i]*math.log2(p[i])
-            p[i]=-p[i]
+            if len(data.properties['class'])==0:
+                p[i]=0
+            else:
+                p[i]=np.sum(data.properties['class']==self.classes[i])/data.count
+                if(p[i]!=0):
+                    p[i]=p[i]*math.log2(p[i])
+                p[i]=-p[i]
         return p.sum()
     
     def ent_gain(self,classifier):#计算信息增益
@@ -79,16 +88,16 @@ class Node:
                 properties={}
                 for key in self.data.properties.keys():
                     properties[key]=self.data.properties[key][mask]
-                tmp=Data(self.data.type,properties)
-                new+=tmp.count/self.data.count*self.entropy(tmp)
+                tmp=Data(self.data.type,properties) 
+                new+=float(tmp.count)/self.data.count*self.entropy(tmp)
         else:#连续型变量
-            mask=(self.data.properties[classifier.name]>=classifier.threshold)
+            mask=(self.data.properties[classifier.name]>=classifier.thresh)
             properties={}
             for key in self.data.properties.keys():
                 properties[key]=self.data.properties[key][mask]
-            tmp=Data(properties)
+            tmp=Data(self.data.type,properties)
             new+=tmp.count/self.data.count*self.entropy(tmp)
-            mask=(self.data.properties[classifier.name]<classifier.threshold)
+            mask=(self.data.properties[classifier.name]<classifier.thresh)
             properties={}
             for key in self.data.properties.keys():
                 properties[key]=self.data.properties[key][mask]
@@ -129,8 +138,22 @@ class Node:
     
     def IV(self,clsprop):
         summary=0
-        for value in clsprop.values:
-            mask=(self.data.properties[clsprop.name]==value)
+        if clsprop.type==0:
+            for value in clsprop.values:
+                mask=(self.data.properties[clsprop.name]==value)
+                tmp=mask.sum()
+                tmp=tmp/self.data.count
+                if(tmp!=0):
+                    tmp=-tmp*math.log2(tmp)
+                summary+=tmp
+        else:
+            mask=(self.data.properties[clsprop.name]>=clsprop.thresh)
+            tmp=mask.sum()
+            tmp=tmp/self.data.count
+            if(tmp!=0):
+                tmp=-tmp*math.log2(tmp)
+            summary+=tmp
+            mask=(self.data.properties[clsprop.name]<clsprop.thresh)
             tmp=mask.sum()
             tmp=tmp/self.data.count
             if(tmp!=0):
@@ -141,71 +164,121 @@ class Node:
     def compute_classifier(self):
         if self.depth>MAX_DEPTH:
             return None
-        gain_r=np.empty(0)
-        gain=np.empty(0)
-        classifiers=[]
+        gain_r=np.empty(0) #信息增益率
+        gain=np.empty(0) #信息增益
+        classifiers=[] #候选分类方法
         for clsprop in self.clsproperties:
-            if clsprop.type==0:
+            if clsprop.type==0: #离散型数据
                 _gain=self.ent_gain(clsprop)
                 gain=np.append(gain,_gain)
-                gain_r=np.append(gain_r,_gain/self.IV(clsprop))
+                IV=self.IV(clsprop)
+                if IV==0:
+                    gain_r=np.append(gain_r,0)
+                else:
+                    gain_r=np.append(gain_r,_gain/self.IV(clsprop))
                 classifiers.append(clsprop)
-            else:
-                sorted_data=self.data.properties[clsprop.name].sorted()
-                chosen=ClsProperty(clsprop.name,1)
+            else: #连续型数据
+                sorted_data=np.unique(self.data.properties[clsprop.name])
+                if len(sorted_data)==1: #该属性的值相同
+                    continue
                 tmp=ClsProperty(clsprop.name,1)
-                maximum=0
-                for i in range(len(sorted_data)-1):
-                    tmp.thresh=(sorted_data[i]+sorted_data[i+1])/2
+                maximum=0 #信息增益的最大值，需要调节阈值使之最大
+                _gain_r=0
+                for i in range(len(sorted_data)-1): #求最合适的阈值
+                    tmp.thresh=(float)(sorted_data[i]+sorted_data[i+1])/2 #把阈值设为相邻数据的中点
                     new_gain=self.ent_gain(tmp)
-                    if maximum<new_gain:
+                    if maximum<=new_gain: #更新分类器
                         chosen=tmp.copy()
-                        _gain_r=new_gain/self.IV(tmp)
+                        _gain_r=new_gain/self.IV(tmp) 
                         maximum=new_gain
                 gain=np.append(gain,maximum)
                 classifiers.append(chosen)
                 gain_r=np.append(gain_r,_gain_r)
-        if len(classifiers)==0:
+        if len(classifiers)==0: #如果没找到合适的分类器，返回None
             return None
         m=gain.mean()
-        i=0
-        for i in range(len(gain)):
-            if(i>=m):
-                break
-        return classifiers[np.argmax(gain_r[i:])]
+        maximum=0
+        ret=classifiers[0]
+        for i in range(len(gain_r)):
+            if gain_r[i] >= maximum:
+                if gain[i]>=m:
+                    maximum=gain_r[i]
+                    ret=classifiers[i]
+        return ret #返回信息增益大于等于平均水平的分类器中信息增益率最大的
     
-    def train(self):
-        if self.leaf==1:
+    def train(self): #训练
+        if self.leaf==1: #如果已经是叶节点，直接返回
             return
-        if len(np.unique(self.data.properties['class']))==1:
+        if len(np.unique(self.data.properties['class']))==1: #如果节点包含数据都属于同一类，则直接把节点归为这一类
             self.leaf=1
             self.result=self.data.properties['class'][0]
             return
-        if self.clsproperties==None:
+        if self.clsproperties==None or self.depth>MAX_DEPTH: #如果节点的分类标准用完或树超过最大深度，把节点归为数据中含有最多的那一类
             self.leaf=1
             self.result=self.most_class()
             return
-        self.classifier=self.compute_classifier()
-        if self.classifier==None:
+        for prop in self.clsproperties: #如果样本在划分属性上取值全部相同，则把节点标记为叶节点
+            if len(np.unique(self.data.properties[prop.name]))!=1:
+                break
             self.leaf=1
             self.result=self.most_class()
             return
-        for value in self.classifier.values:
-            mask=(self.data.properties[self.classifier.name]==value)
+        self.classifier=self.compute_classifier() #计算分类标准
+        if self.classifier==None: #如果没有合适的分类标准，把它设成子节点
+            self.leaf=1
+            self.result=self.most_class()
+            return
+        if self.classifier.type==0: #分类器离散型
+            for value in self.classifier.values:
+                mask=(self.data.properties[self.classifier.name]==value)
+                properties={} #子节点包含的数据的属性
+                for key in self.data.properties.keys():
+                    properties[key]=self.data.properties[key][mask]
+                new_data=Data(self.data.type,properties) #子节点包含的数据
+                if(new_data.count==0): #子节点已经不包含任何数据，将其设为叶节点，类型为父节点所带数据中占比最大的类一类
+                    _child=Node(self.classes,new_data,self.depth+1,self.ancestor)
+                    _child.leaf=1
+                    self.child.append(_child)
+                    self.child[-1].result=self.most_class()
+                else:
+                    _clsproperties=self.clsproperties.copy()
+                    _clsproperties.remove(self.classifier) #删去该节点的分类器，作为子节点的分类标准集合
+                    self.child.append(Node(self.classes,new_data,self.depth+1,self.ancestor,_clsproperties))
+        else: #分类器为连续型
+            mask=(self.data.properties[self.classifier.name]>=self.classifier.thresh)
             properties={}
             for key in self.data.properties.keys():
                 properties[key]=self.data.properties[key][mask]
             new_data=Data(self.data.type,properties)
             if(new_data.count==0):
-                new_data.leaf=1
-                child.append(Node(self.classes,new_data,self.depth+1,self.ancestor))
-                child[-1].result=self.most_class()
-                return
+                _child=Node(self.classes,new_data,self.depth+1,self.ancestor)
+                _child.leaf=1
+                self.child.append(_child)
+                self.child[-1].result=self.most_class()
             else:
-                _clsproperties=self.clsproperties.copy()
-                if self.classifier.type==0:
-                    _clsproperties.remove(self.classifier)
-                self.child.append(Node(self.classes,new_data,self.depth+1,self.ancestor,_clsproperties))
+                mask=(self.data.properties[self.classifier.name]>=self.classifier.thresh)
+                properties={}
+                for key in self.data.properties.keys():
+                    properties[key]=self.data.properties[key][mask]
+                new_data=Data(self.data.type,properties)
+                if(new_data.count==0):
+                    _child=Node(self.classes,new_data,self.depth+1,self.ancestor)
+                    _child.leaf=1
+                    self.child.append(_child)
+                    self.child[-1].result=self.most_class()
+                else:
+                    self.child.append(Node(self.classes,new_data,self.depth+1,self.ancestor,self.clsproperties.copy()))
+                properties={}
+                for key in self.data.properties.keys():
+                    properties[key]=self.data.properties[key][~mask]
+                new_data=Data(self.data.type,properties)
+                if(new_data.count==0):
+                    _child=Node(self.classes,new_data,self.depth+1,self.ancestor)
+                    _child.leaf=1
+                    self.child.append(_child)
+                    self.child[-1].result=self.most_class()
+                else:
+                    self.child.append(Node(self.classes,new_data,self.depth+1,self.ancestor,self.clsproperties.copy()))
         for _child in self.child:
             _child.train()
         return
@@ -216,9 +289,20 @@ class DTree:
         self.train_data=train_data
         self.test_data=test_data
         self.classes=classes
-        self.ancestor=Node(classes,data,0)
+        self.ancestor=Node(classes,train_data,0)
         self.ancestor.test_data=test_data
-        
-node=Node(np.array([0,1]),Data(np.array([0]),{'class':np.array([1,1,0,0,0,0,1,1,1]),'ccc':np.array([1,2,2,1,2,2,2,1,1])}),0)
-node.train()
-print(node.predict({'ccc':1}))
+    def train(self):
+        self.ancestor.train()
+    def compute_accuracy(self):
+        return self.ancestor.compute_accuracy(self.test_data)
+    def predict(self,prop):
+        return self.ancestor.predict(prop)
+    def predict(self,prop):
+        _prop={}
+        index=0
+        for key in self.train_data.properties.keys():
+            if key=='class':
+                continue
+            _prop[key]=prop[index]
+            index+=1
+        return self.ancestor.predict(_prop)
